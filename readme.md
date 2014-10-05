@@ -11,20 +11,20 @@ having special permissions or running untrusted binaries. Also, since work is sh
 
 When using Couchsite, each page of a website is stored in CouchDB as a JSON document using a special format:
 
-<code>
-	{
-		_id:"sample_title",
+```json
+    {
+        _id:"sample_title",
         cs:{
-    		type:"cs_content",
+            type:"cs_content",
             owner:"pokstad",
             template:"webpage",
-    		modified:1234567890,
-    		rendered:1234567890,
+            modified:1234567890,
+            rendered:1234567890,
         },
-		title:"Sample Title",
-		body:"This is sample content."
-	}
-</code>
+        title:"Sample Title",
+        body:"This is sample content."
+    }
+```
 
 * _id: URL for the rendered content.
 * cs: The object for all Couchsite related items
@@ -40,7 +40,7 @@ Any arbitrary fields may be added to extend functionality, but they must avoid b
 
 Similar to other HTML template systems, Couchsite aims to reuse HTML code to improve maintainability. Unlike other template systems, Couchsite accomplishes this on the client side. Each template is stored as an attachment to a special document. This special document follows this format:
 
-<code>
+```json
     {
         _id:"cs_template:webpage",
         cs:{
@@ -56,11 +56,11 @@ Similar to other HTML template systems, Couchsite aims to reuse HTML code to imp
             }
         }
     }
-</code>
+```
 
 Similar to content docs, the template doc must follow a schema. The cs object contains all required fields. If the template is attached as a file, then the cs.attachment property must be true and the cs.template field specifies which attachment contains the template. If the template is a string inside the doc, then cs.attachment must be ommitted or false and cs.template will contain the template string:
 
-<code>
+```json
     {
         _id:"cs_template:webpage",
         cs:{
@@ -71,7 +71,7 @@ Similar to content docs, the template doc must follow a schema. The cs object co
             template:"<h1>{{title}}</h1><body>{{markdown body}}</body>"
         }
     }
-</code>
+```
 
 Since templates contain arbitrary HTML, it is strongly advised to only allow admins permission to create or modify them.
 
@@ -100,7 +100,8 @@ Installing Couchsite is easy, but there are a few prerequisites:
 [Go here for CouchDB installation instructions.](http://couchdb.apache.org/)
 
 If you are a server admin, you can create a database via curl:
-<code>curl -X PUT http://localhost:5984/databasename</code>
+
+```curl -X PUT http://localhost:5984/databasename```
 
 ## Install Couchsite via File Upload ##
 
@@ -115,9 +116,10 @@ If you are able to enable CORS on your CouchDB server, you can go to this page a
 http://github.com/pokstad/couchsite/install/cors.html
 
 To enable CORS for the above page to work, you can use this curl command:
-<code>curl -X PUT http://localhost:5984/_config/httpd/enable_cors -d 'true'</code>
-<code>curl -X PUT http://localhost:5984/_config/cors/credentials -d 'true'</code>
-<code>curl -X PUT http://localhost:5984/_config/cors/origins -d 'https://pokstad.github.io'</code>
+
+```curl -X PUT http://localhost:5984/_config/httpd/enable_cors -d 'true'
+curl -X PUT http://localhost:5984/_config/cors/credentials -d 'true'
+curl -X PUT http://localhost:5984/_config/cors/origins -d 'https://pokstad.github.io'```
 
 IN PROGRESS
 
@@ -125,14 +127,16 @@ IN PROGRESS
 
 If you have access to the _replicator database, you can trigger a one time replication to copy the latest version of the demo project and use
 that as a starting point. This can be done using curl:
-<code>curl -X PUT http://localhost:5984/_replicator -H 'Accept-Type:application/json' -d '{"source":"http://example.com/couchsite", "target":"your_local_database_name"}'</code>
+
+```curl -X PUT http://localhost:5984/_replicator -H 'Accept-Type:application/json' -d '{"source":"http://example.com/couchsite", "target":"your_local_database_name"}'```
 
 **PLEASE, NO CONTINUOUS REPLICATIONS.** This continually pings the server indefinitely. If I have too many people abusing the server, I will be forced to remove this option.
 
 # Security Considerations #
 
 To restrict other users from accessing this database, you can provide a JSON security object that specifies you as the only member:
-<code>curl -X PUT http://localhost:5984/databasename/_security -H 'Accept-Type:application/json' -d '{"members":["your_username"]}'</code>
+
+```curl -X PUT http://localhost:5984/databasename/_security -H 'Accept-Type:application/json' -d '{"members":["your_username"]}'```
 
 # Verifying Couchsite with the Test Suite #
 
