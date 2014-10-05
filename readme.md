@@ -10,6 +10,7 @@ having special permissions or running untrusted binaries. Also, since work is sh
 ## Content Document Format ##
 
 When using Couchsite, each page of a website is stored in CouchDB as a JSON document using a special format:
+
 <code>
 	{
 		_id:"sample_title",
