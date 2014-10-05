@@ -40,7 +40,7 @@ Any arbitrary fields may be added to extend functionality, but they must avoid b
 
 Similar to other HTML template systems, Couchsite aims to reuse HTML code to improve maintainability. Unlike other template systems, Couchsite accomplishes this on the client side. Each template is stored as an attachment to a special document. This special document follows this format:
 
-```JSON
+```JavaScript
     {
         _id:"cs_template:webpage",
         cs:{
@@ -60,7 +60,7 @@ Similar to other HTML template systems, Couchsite aims to reuse HTML code to imp
 
 Similar to content docs, the template doc must follow a schema. The cs object contains all required fields. If the template is attached as a file, then the cs.attachment property must be true and the cs.template field specifies which attachment contains the template. If the template is a string inside the doc, then cs.attachment must be ommitted or false and cs.template will contain the template string:
 
-```JSON
+```JavaScript
     {
         _id:"cs_template:webpage",
         cs:{
