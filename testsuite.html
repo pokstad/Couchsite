@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Couchsite Administrator Panel</title>
+
+    <!-- Bootstrap -->
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+	<div class="container">
+		<div class="container">
+			<h1>Couchsite Test Suite</h1>
+			<form role="form" id="loginForm">
+				<p>By default, our test suite assumes you are using a server on 127.0.0.1:5984</p>
+		  	  	<div class="form-group">
+		    	  <label for="exampleInputEmail1">Email address</label>
+		    	  <input type="username" class="form-control" id="inputUsername" placeholder="Enter username">
+		  		</div>
+		  	  	<div class="form-group">
+		    		<label for="exampleInputPassword1">Password</label>
+		    		<input type="password" class="form-control" id="inputPassword" placeholder="Password">
+		  	  	</div>
+				<button type="button" class="btn btn-default" onClick="CouchsiteTestSuite.setCredentials(this.form.inputUsername.value, this.form.inputPassword.value)">Login</button>
+			</form>
+		</div>
+		<hr />
+		<div class="container">
+			<h2>Run Test Suite</h2>
+			<button type="button" class="btn btn-default" onClick="CouchsiteTestSuite.runTestSuite()">Start Tests</button>
+			<ol id="tests_run"></ol>
+		</div>
+		<hr />
+		<div class="container">
+			<div class="panel-group" id="accordion">
+			  <div class="panel panel-default">
+			    <div class="panel-heading">
+			      <h4 class="panel-title">
+			        <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+			          Couchsite Code
+			        </a>
+			      </h4>
+			    </div>
+			    <div id="collapseOne" class="panel-collapse collapse">
+			      <div class="panel-body">
+					  <code id="couchsite_code"></code>
+			      </div>
+			    </div>
+			  </div>
+		  </div>
+  		</div>
+  	</div>
+	<script src="./jquery-2.1.1.min.js"></script>
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+	<script src="./jquery.couch.js"></script>
+	<script src="./handlebars-v2.0.0.js"></script>
+	<script src="./couchsite.js"></script>
+	<script src="./couchsite_tests.js"></script>
+	<script type="text/javascript">
+		$( document ).ready(function(){
+		    console.log("Running couchsite test suite...");
+			// To speed up testing, we are going to perform a CORS request from a localfile to localhost. This is allowed in Safari browser.
+			$.couch.urlPrefix = "http://127.0.0.1:5984"
+			// We only want to show the login window if there is no current session
+			$.couch.session({success:function(resp){
+				/* Inspect resp to make sure we have a valid session.
+				 * A valid session has the following structure:
+				 * {
+				    "ok": true,
+				    "userCtx": {
+				      "name": "username",
+				      "roles": ["role1","role2"]
+				    },
+				    "info": {
+				      "authentication_db":"_users",
+				      "authentication_handlers":["oauth","cookie","default"],
+				      "authenticated":"default"
+				    }
+				  }
+                 */
+				console.log("session response: "+JSON.stringify(resp));
+				if (resp.ok != undefined && resp.ok == true && resp.userCtx.name != null) {
+					CouchsiteTestSuite.user_ctx = resp.userCtx;
+					$('#loginForm').hide();
+				}
+			}});
+		    console.log("DONE testing couchsite document functions.");
+		});
+	</script>
+  </body>
+</html>
+
+
+
