@@ -14,10 +14,25 @@ var Couchsite = (function() {
   var default_design_document = {
       _id:"_design/couchsite",
       views:{
-          posts_chrono:{
-              map:function(doc){if(doc.type=="post"){emit(doc.timestamp,doc.title);}},
+          content_by_template:{
+              map:function(doc){
+				  if (doc.cs && doc.cs.type && doc.cs.type == "cs_content") {
+					  emit(doc.cs.template,null);
+				  }
+			  },
               reduce:"_count"
-          }
+          },
+		  templates:{
+			  map:function(doc) {
+				  if (doc.cs && doc.cs.type && doc.cs.type == "cs_template") {
+					  emit(doc._id, null);
+					  if (doc.cs.parent) {
+						  emit(doc.cs.parent, doc._id);
+					  }
+				  }
+			  },
+			  reduce:"_count"
+		  }
       },
       validate_doc_update:function(newDoc, oldDoc, user_ctx, sec_obj){
           return true;
@@ -108,9 +123,6 @@ var Couchsite = (function() {
         docID = docID.replace('/index.html','');
         return docID;
     },
-    serializeDesignDoc:function(options){
-        return JSON.stringify(this.design_doc, this.function_stringify);
-    },
     installDesignDoc:function(options){
 		var sanitized_json = this.couchSanitizedJson(default_design_document);
 		console.log("Santized json design doc: "+JSON.stringify(sanitized_json));
@@ -145,7 +157,6 @@ var Couchsite = (function() {
         }
         return indexhtml_template(doc);
     },
-    site_db:null,
     renderPageForDoc:function(doc) {
         if (doc.type != "post") {
             console.log("Doc type is not renderable type: "+doc._id);
@@ -180,6 +191,10 @@ var Couchsite = (function() {
             }
         });
     },
+    serializeDesignDoc:function(options){
+        return JSON.stringify(this.design_doc, this.function_stringify);
+    },
+	site_db:null,
     user_ctx:null,
     url_prefix:"/",
     utf8_to_safe_html:function(stringypoo) {

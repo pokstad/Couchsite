@@ -11,7 +11,7 @@ var CouchsiteTestSuite = (function() {
         password:null,
         user_ctx:null,
 		test_results:$("#tests_run"),
-        testDbName:null,
+        test_db_name:"couchsite_testbed",
         testDataUrl:'./documentation.json',
         installDesignDoc:function(options){
 			var _this = this;
@@ -31,11 +31,17 @@ var CouchsiteTestSuite = (function() {
                 throw {error: "User session is null"};
             }
 			var _this = this; // async changes scope
-			$.couch.allDbs({success:function(db_list){
-				_this.determineTempDatabaseName(db_list);
-				_this.log_test_results("Creating database with name: "+_this.testDbName);
-				Couchsite.site_db = $.couch.db(_this.testDbName);
-				Couchsite.site_db.create(options);
+			$.couch.allDbs({success:function(db_list) {
+				if (_this.test_db_name == null) {
+					_this.determineTempDatabaseName(db_list);
+				}
+				Couchsite.site_db = $.couch.db(_this.test_db_name);
+				if (db_list.indexOf(_this.test_db_name) == -1) {
+					_this.log_test_results("Creating database with name: "+_this.test_db_name);
+					Couchsite.site_db.create(options);
+				} else if (options.success) {
+					options.success(options);
+				}
 			}});
         },
         determineTempDatabaseName:function(db_list){
@@ -44,7 +50,7 @@ var CouchsiteTestSuite = (function() {
             while (db_list.indexOf(randomName) != -1) {
                 randomName = _this.generateRandomDbName();
             };
-            _this.testDbName = randomName;
+            _this.test_db_name = randomName;
 			console.log("Using random database name: "+randomName);
 			return randomName;
         },
@@ -62,11 +68,11 @@ var CouchsiteTestSuite = (function() {
 				{
 					_id:"page1",
 					cs:{
-						owner:"test_user",
 						type:"cs_content",
 						template:"cs_template:root",
 						timestamp:new Date().getTime()
 					},
+					owner:"test_user",
 					title:"Sample Title",
 					body:"# Test Page 1 #\nThis site is legit"
 				},
@@ -79,7 +85,7 @@ var CouchsiteTestSuite = (function() {
 					}
 				},
 				{
-					_id:"cs_template:footer",
+					_id:"cs_template:body",
 					cs:{
 						type:"cs_template",
 						syntax:"handlebars.js",
@@ -97,7 +103,7 @@ var CouchsiteTestSuite = (function() {
         },
         renderSite:function(options){
 			this.log_test_results("Rendering static content");
-            if(options.success){options.success(options)};
+			Couchsite.renderSite(options)
         },
         runTestSuite:function(){
 			console.log("Running the test suite.")

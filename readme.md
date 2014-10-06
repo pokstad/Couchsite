@@ -16,62 +16,147 @@ When using Couchsite, each page of a website is stored in CouchDB as a JSON docu
         _id:"sample_title",
         cs:{
             type:"cs_content",
-            owner:"pokstad",
             template:"webpage",
             modified:1234567890,
             rendered:1234567890,
         },
+		owner:"pokstad",
         title:"Sample Title",
         body:"This is sample content."
     }
 ```
 
-* _id: URL for the rendered content.
-* cs: The object for all Couchsite related items
-  * type: MANDATORY | Content documents type must be cs_content.
-  * template: MANDATORY | This determines which template is used to render the page. See the Template Docs section.
-  * owner: MANDATORY | The user that created the document and consequently owns it.
-  * modified: an integer of the milliseconds since epoch. This can be obtained by: new Date().getTime()
-  * rendered: indicates if the current rendered static page matches the timestamp of the most recent document. If the rendered time is less than the modified timestamp, then we need to update the rendering.
+* _id : URL for the rendered content.
+* cs : MANDATORY: The object for all Couchsite related items
+* cs.type : MANDATORY | Content documents type must be cs_content.
+* cs.template : MANDATORY | This determines which template is used to render the page. See the Template Docs section.
+* cs.modified : MANDATORY | an integer of the milliseconds since epoch. This can be obtained by: new Date().getTime()
+* cs.rendered : MANDATORY | indicates if the current rendered static page matches the timestamp of the most recent document. If the rendered time is less than the modified timestamp, then we need to update the rendering.
 
-Any arbitrary fields may be added to extend functionality, but they must avoid being added to the "cs" object to guarantee future compatability with new minor versions of Couchsite.
+After being rendered, the rendering will be stored in the attachment _attachments.cs_rendered.
+
+```JavaScript
+    {
+        _id:"sample_title",
+        cs:{
+            type:"cs_content",
+            template:"webpage",
+            modified:1234567890,
+            rendered:1234567890,
+        },
+		owner:"pokstad",
+        title:"Sample Title",
+        body:"This is sample content.",
+		_attachments:{
+			cs_rendered:{
+				stub:true
+			}
+		}
+    }
+```
+
+Any arbitrary fields may be added to extend functionality, but they must avoid being added to the "cs" object to encourage future compatability with Couchsite.
 
 ## Template Docs ##
 
 Similar to other HTML template systems, Couchsite aims to reuse HTML code to improve maintainability. Unlike other template systems, Couchsite accomplishes this on the client side. Each template is stored as an attachment to a special document. This special document follows this format:
 
+Similar to content docs, the template doc must follow a schema. The cs object contains all required fields:
+
 ```JavaScript
     {
         _id:"cs_template:webpage",
         cs:{
-			name:"webpage",
             type:"cs_template",
             syntax:"handlebars.js",
+			parent:"cs_template:rootpage",
+            template:"<h1>{{title}}</h1><body>{{markdown body}}</body>",
+			modified:1234567890
+        }
+    }
+```
+
+* cs.type : MANDATORY | for templates, this must be set to "cs_template"
+* cs.syntax : OPTIONAL | By default, syntax is set to "handlebars.js"
+* cs.parent : OPTIONAL | If the template is a partial to be included in another referenced template (see Parent Templates)
+* cs.template : OPTIONAL | Contains the template string when cs.attachment is set to false.
+* cs.modified : MANDATORY | Indicates the last time the template was modified.
+* _attachments.cs_template : OPTIONAL | If cs.template does not exist, then the "cs_template" attachment is used.
+
+### Attached Templates ###
+
+If the template is a string embedded inside the doc, then cs.template will contain the template string. If the template is attached as a file, then the _attachments.cs_template property contains the template:
+
+```JavaScript
+    {
+        _id:"cs_template:webpage",
+        cs:{
+            type:"cs_template",
             attachment:true,
-            template:"index.html"
+			modified:1234567890
         },
         _attachments:{
-            "index.html":{
+            cs_template:{
 				stub:true
             }
         }
     }
 ```
 
-Similar to content docs, the template doc must follow a schema. The cs object contains all required fields. If the template is attached as a file, then the cs.attachment property must be true and the cs.template field specifies which attachment contains the template. If the template is a string inside the doc, then cs.attachment must be ommitted or false and cs.template will contain the template string:
+### Parent Templates ###
+
+Sometimes a template being used is a partial that requires an existing template to function. In these cases, a parent attribute can be set to the ID of the required parent template.
 
 ```JavaScript
     {
-        _id:"cs_template:webpage",
+        _id:"cs_template:subpage",
         cs:{
-			name:"webpage",
             type:"cs_template",
-            syntax:"handlebars.js",
-            attachment:false,
-            template:"<h1>{{title}}</h1><body>{{markdown body}}</body>"
+			parent:"cs_template:rootpage",
+            template:"<h1>{{title}}</h1><body>{{markdown body}}</body>",
+			modified:1234567890
         }
     }
 ```
+
+```JavaScript
+    {
+        _id:"cs_template:rootpage",
+        cs:{
+            type:"cs_template",
+            template:"<html>{{> cs_template:subpage}}</html>",
+			modified:1234567890
+        }
+    }
+```
+
+### Precompiling Templates ###
+
+IN PROGRESS
+
+Precompilation is a preemptive strategy to save time fetching and compiling templates and partials. If a child, parent, grandparent, great grandparent, etc., has been modified, then the changes will propagate downwards until all leaf nodes are precompiled. This is ideally done each time after templates are modified.
+
+```JavaScript
+    {
+        _id:"cs_template:childpage",
+        cs:{
+            type:"cs_template",
+			parent:"cs_template:parentpage",
+            template:"<h1>{{title}}</h1><body>{{markdown body}}</body>",
+			modified:1234567890,
+			compiled:1234567890
+        },
+		_attachments:{
+			cs_compiled:{
+				stub:true
+			}
+		}
+    }
+```
+
+The cs.compiled property indicates when the compilation occurred. A compiled template is considered outdated when the template has been modified more recently, or when any of the ancestors of a template are also modified more recently.
+
+### Template Security Considerations ###
 
 Since templates contain arbitrary HTML, it is strongly advised to only allow admins permission to create or modify them.
 
@@ -82,9 +167,9 @@ The rendering process is as follows:
 1. Couchsite fetches a CouchDB view for all content docs to render.
 1. Each document in the returned view is iterated over:
   1. Any referenced templates are fetched and cached.
-  1. Couchsite uses markdown (default) to render cs.content into HTML.
+  1. Any parent templates needed by referenced templates are also fetched and cached.
   1. Couchsite uses handlebars.js (default) to compile the referenced templates.
-  1. The rendered page is attached to the document it originated from as a static page.
+  1. The rendered page is attached to the document it originated from as a static resource.
 
 Couchsite also uses vhosts to map the site into a pretty URL structure. This helps overcome the limitation of mapping the root ("/") directory to a page. It also helps separate the JSON documents from the static pages by moving database access to the "/db/" URL.
 
