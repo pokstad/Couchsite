@@ -61,8 +61,6 @@ Any arbitrary fields may be added to extend functionality, but they must avoid b
 
 Similar to other HTML template systems, Couchsite aims to reuse HTML code to improve maintainability. Unlike other template systems, Couchsite accomplishes this on the client side. Each template is stored as an attachment to a special document. This special document follows this format:
 
-Similar to content docs, the template doc must follow a schema. The cs object contains all required fields:
-
 ```JavaScript
     {
         _id:"cs_template:webpage",
@@ -79,9 +77,9 @@ Similar to content docs, the template doc must follow a schema. The cs object co
 * cs.type : MANDATORY | for templates, this must be set to "cs_template"
 * cs.syntax : OPTIONAL | By default, syntax is set to "handlebars.js"
 * cs.parent : OPTIONAL | If the template is a partial to be included in another referenced template (see Parent Templates)
-* cs.template : OPTIONAL | Contains the template string when cs.attachment is set to false.
+* cs.template : OPTIONAL | Contains the template string.
 * cs.modified : MANDATORY | Indicates the last time the template was modified.
-* _attachments.cs_template : OPTIONAL | If cs.template does not exist, then the "cs_template" attachment is used.
+* _attachments.cs_template : OPTIONAL | If cs.template does not exist, then the "cs_template" attachment is used instead.
 
 ### Attached Templates ###
 
@@ -154,7 +152,7 @@ Precompilation is a preemptive strategy to save time fetching and compiling temp
     }
 ```
 
-The cs.compiled property indicates when the compilation occurred. A compiled template is considered outdated when the template has been modified more recently, or when any of the ancestors of a template are also modified more recently.
+The cs.compiled property indicates when the compilation occurred. A compiled template is considered outdated when the template has been modified more recently, or when any of the ancestors of a template are also modified more recently. The view located at _design/couchsite/_view/template_parents creates a listing of all parent-child relationships along with modified and compilation times. Any time a parent is modified, all children must also be rendered.
 
 ### Template Security Considerations ###
 

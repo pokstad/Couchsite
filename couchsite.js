@@ -22,12 +22,12 @@ var Couchsite = (function() {
 			  },
               reduce:"_count"
           },
-		  templates:{
+		  template_parents:{
 			  map:function(doc) {
 				  if (doc.cs && doc.cs.type && doc.cs.type == "cs_template") {
-					  emit(doc._id, null);
+					  emit(doc._id, [cs.modified, cs.compiled]);
 					  if (doc.cs.parent) {
-						  emit(doc.cs.parent, doc._id);
+						  emit(doc.cs.parent, [cs.modified, cs.compiled]);
 					  }
 				  }
 			  },
